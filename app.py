@@ -315,7 +315,23 @@ Sincerely,
                 }
                 
                 st.session_state.complaints.append(complaint)
-                st.success(f"Complaint submitted successfully! Your complaint ID is: {complaint_id}")
+                st.success(f"🎉 **Complaint Submitted Successfully!**")
+                st.success(f"Your complaint ID is: **{complaint_id}**")
+                st.info("📋 You can now track your complaint status in the **'My Complaints'** tab.")
+                st.balloons()
+                
+                # Show a nice confirmation box
+                st.markdown("""
+                ---
+                ### ✅ What happens next?
+                
+                1. **Immediate Confirmation** - Your complaint has been recorded in our system
+                2. **Auto-Routing** - We'll automatically forward it to the appropriate authority
+                3. **Status Updates** - You'll receive real-time updates on the progress
+                4. **Resolution Tracking** - Monitor every step until your issue is resolved
+                
+                **Need help?** Contact our support team or use the AI Legal Assistant for guidance.
+                """)
                 st.rerun()
 
 def show_complaints():
@@ -471,7 +487,7 @@ def generate_ai_response(message):
 
 def show_about():
     st.header("About SimpliLaw")
-    st.subheader("We believe that justice should be accessible to everyone, regardless of their location, language, or economic status. SimpliLaw uses cutting-edge AI technology to bridge the gap between citizens and the legal system.")
+    st.write("We believe that justice should be accessible to everyone, regardless of their location, language, or economic status. SimpliLaw uses cutting-edge AI technology to bridge the gap between citizens and the legal system.")
     
     col1, col2 = st.columns([1, 1])
     
