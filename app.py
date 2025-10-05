@@ -40,42 +40,6 @@ st.markdown("""
         height: 100%;
     }
     
-    .complaint-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e5e7eb;
-        margin-bottom: 1rem;
-    }
-    
-    .status-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-    
-    .status-submitted {
-        background-color: #dbeafe;
-        color: #1e40af;
-    }
-    
-    .status-review {
-        background-color: #fef3c7;
-        color: #92400e;
-    }
-    
-    .status-action {
-        background-color: #fed7aa;
-        color: #c2410c;
-    }
-    
-    .status-resolved {
-        background-color: #dcfce7;
-        color: #166534;
-    }
-    
     .chat-message {
         padding: 0.75rem 1rem;
         border-radius: 18px;
@@ -92,45 +56,6 @@ st.markdown("""
     .bot-message {
         background-color: #f3f4f6;
         color: #374151;
-    }
-    
-    .contact-info {
-        background: #f8fafc;
-        padding: 1.5rem;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .social-links {
-        display: flex;
-        gap: 1rem;
-        margin-top: 1rem;
-    }
-    
-    .social-link {
-        color: #3b82f6;
-        text-decoration: none;
-        font-size: 1.5rem;
-    }
-    
-    .progress-dots {
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-    }
-    
-    .progress-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-    }
-    
-    .progress-active {
-        background-color: #10b981;
-    }
-    
-    .progress-inactive {
-        background-color: #d1d5db;
     }
     
     .stButton > button {
@@ -413,59 +338,67 @@ def show_complaints():
         return
     
     for complaint in user_complaints:
-        status_class = {
-            'Submitted': 'status-submitted',
-            'Under Review': 'status-review',
-            'Action Taken': 'status-action',
-            'Resolved': 'status-resolved'
-        }.get(complaint['status'], 'status-submitted')
-        
-        st.markdown(f"""
-        <div class="complaint-card">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                <div>
-                    <h3 style="font-size: 1.25rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">
-                        Complaint ID: {complaint['id']}
-                    </h3>
-                    <p style="color: #6b7280; margin: 0;">Filed on: {complaint['date']}</p>
-                </div>
-                <span class="status-badge {status_class}">{complaint['status']}</span>
-            </div>
+        # Create a container for each complaint
+        with st.container():
+            # Header with ID and status
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.subheader(f"Complaint ID: {complaint['id']}")
+                st.caption(f"Filed on: {complaint['date']}")
+            with col2:
+                status_color = {
+                    'Submitted': '🔵',
+                    'Under Review': '🟡', 
+                    'Action Taken': '🟠',
+                    'Resolved': '🟢'
+                }.get(complaint['status'], '🔵')
+                st.markdown(f"**{status_color} {complaint['status']}**")
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                <div>
-                    <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Category</p>
-                    <p style="font-weight: 500; margin: 0;">{complaint['category']}</p>
-                </div>
-                <div>
-                    <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Location</p>
-                    <p style="font-weight: 500; margin: 0;">{complaint['location']}</p>
-                </div>
-            </div>
+            # Details in columns
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Category:**")
+                st.write(complaint['category'])
+            with col2:
+                st.markdown("**Location:**")
+                st.write(complaint['location'])
             
-            <div style="margin-bottom: 1rem;">
-                <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">Issue Description</p>
-                <p style="color: #1f2937;">{complaint['description'][:200]}{'...' if len(complaint['description']) > 200 else ''}</p>
-            </div>
+            # Description
+            st.markdown("**Issue Description:**")
+            description = complaint['description'][:200] + ('...' if len(complaint['description']) > 200 else '')
+            st.write(description)
             
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="progress-dots">
-                    {get_progress_dots(complaint['status'])}
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-def get_progress_dots(status):
-    steps = ['Submitted', 'Under Review', 'Action Taken', 'Resolved']
-    current_index = steps.index(status) if status in steps else 0
-    
-    dots = []
-    for i, step in enumerate(steps):
-        class_name = 'progress-active' if i <= current_index else 'progress-inactive'
-        dots.append(f'<div class="progress-dot {class_name}" title="{step}"></div>')
-    
-    return ''.join(dots)
+            # Progress indicators
+            st.markdown("**Progress:**")
+            steps = ['Submitted', 'Under Review', 'Action Taken', 'Resolved']
+            current_step = steps.index(complaint['status']) if complaint['status'] in steps else 0
+            
+            progress_cols = st.columns(4)
+            for i, step in enumerate(steps):
+                with progress_cols[i]:
+                    if i <= current_step:
+                        st.markdown(f"✅ **{step}**")
+                    else:
+                        st.markdown(f"⭕ {step}")
+            
+            # View details button
+            if st.button(f"View Full Details", key=f"view_{complaint['id']}"):
+                st.info(f"""
+                **Full Complaint Details:**
+                
+                **ID:** {complaint['id']}
+                **Name:** {complaint['name']}
+                **Phone:** {complaint['phone']}
+                **Category:** {complaint['category']}
+                **Location:** {complaint['location']}
+                **Status:** {complaint['status']}
+                **Date Filed:** {complaint['date']}
+                
+                **Full Description:**
+                {complaint['description']}
+                """)
+            
+            st.divider()
 
 def show_legal_assistant():
     st.header("AI Legal Assistant")
@@ -570,34 +503,28 @@ def show_contact():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("""
-        <div class="contact-info">
-            <h3 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">Get Support</h3>
-            
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                <span style="font-size: 1.25rem; margin-right: 1rem;">📞</span>
-                <span>+91 8639225248</span>
-            </div>
-            
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                <span style="font-size: 1.25rem; margin-right: 1rem;">📧</span>
-                <span>vinuthna2024@gmail.com</span>
-            </div>
-            
-            <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
-                <span style="font-size: 1.25rem; margin-right: 1rem;">📍</span>
-                <span>Hyderabad, Telangana, India</span>
-            </div>
-            
-            <h4 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Follow Us</h4>
-            <div class="social-links">
-                <a href="#" class="social-link">🐦</a>
-                <a href="#" class="social-link">📘</a>
-                <a href="https://linkedin.com/in/vinuthna-priya" target="_blank" class="social-link">💼</a>
-                <a href="https://instagram.com/priyawincherry" target="_blank" class="social-link">📷</a>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("### Get Support")
+        
+        st.markdown("📞 **Phone:**")
+        st.write("+91 8639225248")
+        
+        st.markdown("📧 **Email:**")
+        st.write("vinuthna2024@gmail.com")
+        
+        st.markdown("📍 **Location:**")
+        st.write("Hyderabad, Telangana, India")
+        
+        st.markdown("### Follow Us")
+        col_social1, col_social2, col_social3, col_social4 = st.columns(4)
+        
+        with col_social1:
+            st.markdown("[🐦 Twitter](#)")
+        with col_social2:
+            st.markdown("[📘 Facebook](#)")
+        with col_social3:
+            st.markdown("[💼 LinkedIn](https://linkedin.com/in/vinuthna-priya)")
+        with col_social4:
+            st.markdown("[📷 Instagram](https://instagram.com/priyawincherry)")
     
     with col2:
         with st.form("contact_form"):
