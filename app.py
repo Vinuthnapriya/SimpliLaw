@@ -183,11 +183,11 @@ def show_navigation():
     """, unsafe_allow_html=True)
 
 # Authentication functions
-def login_form():
-    with st.form("login_form"):
+def login_form(form_key="login"):
+    with st.form(f"login_form_{form_key}"):
         st.subheader("Login")
-        email = st.text_input("Email Address")
-        password = st.text_input("Password", type="password")
+        email = st.text_input("Email Address", key=f"login_email_{form_key}")
+        password = st.text_input("Password", type="password", key=f"login_password_{form_key}")
         
         if st.form_submit_button("Login"):
             user = next((u for u in st.session_state.users if u['email'] == email and u['password'] == password), None)
@@ -198,13 +198,13 @@ def login_form():
             else:
                 st.error("Invalid email or password.")
 
-def register_form():
-    with st.form("register_form"):
+def register_form(form_key="register"):
+    with st.form(f"register_form_{form_key}"):
         st.subheader("Register")
-        name = st.text_input("Full Name")
-        email = st.text_input("Email Address")
-        phone = st.text_input("Phone Number")
-        password = st.text_input("Password", type="password")
+        name = st.text_input("Full Name", key=f"register_name_{form_key}")
+        email = st.text_input("Email Address", key=f"register_email_{form_key}")
+        phone = st.text_input("Phone Number", key=f"register_phone_{form_key}")
+        password = st.text_input("Password", type="password", key=f"register_password_{form_key}")
         
         if st.form_submit_button("Register"):
             if any(u['email'] == email for u in st.session_state.users):
@@ -305,12 +305,12 @@ def show_complaint_form():
         st.warning("Please login first to submit a complaint.")
         col1, col2 = st.columns(2)
         with col1:
-            login_form()
+            login_form("complaint_login")
         with col2:
-            register_form()
+            register_form("complaint_register")
         return
     
-    with st.form("complaint_form"):
+    with st.form("complaint_submission_form"):
         col1, col2 = st.columns(2)
         
         with col1:
@@ -335,11 +335,16 @@ def show_complaint_form():
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.form_submit_button("🪄 Generate AI Complaint"):
-                if not issue_description or not category or not full_name:
-                    st.error("Please fill in all required fields before generating complaint.")
-                else:
-                    ai_complaint = f"""
+            generate_ai = st.form_submit_button("🪄 Generate AI Complaint")
+        
+        with col2:
+            submit_complaint = st.form_submit_button("📤 Submit Complaint")
+        
+        if generate_ai:
+            if not issue_description or not category or not full_name:
+                st.error("Please fill in all required fields before generating complaint.")
+            else:
+                ai_complaint = f"""
 FORMAL COMPLAINT
 
 To: The Concerned Authority
@@ -362,32 +367,31 @@ Thank you for your time and consideration.
 
 Sincerely,
 {full_name}
-                    """
-                    st.text_area("AI-Generated Complaint", value=ai_complaint, height=300)
-                    st.success("AI-generated complaint has been created! You can review and modify it before submitting.")
+                """
+                st.text_area("AI-Generated Complaint", value=ai_complaint, height=300, key="ai_generated_complaint")
+                st.success("AI-generated complaint has been created! You can review and modify it before submitting.")
         
-        with col2:
-            if st.form_submit_button("📤 Submit Complaint"):
-                if not all([full_name, phone, category, location, issue_description]):
-                    st.error("Please fill in all required fields.")
-                else:
-                    complaint_id = f"SL{date.today().year}{str(len(st.session_state.complaints) + 1).zfill(4)}"
-                    
-                    complaint = {
-                        'id': complaint_id,
-                        'name': full_name,
-                        'phone': phone,
-                        'category': category,
-                        'location': location,
-                        'description': issue_description,
-                        'status': 'Submitted',
-                        'date': date.today().strftime('%B %d, %Y'),
-                        'user_email': st.session_state.user['email']
-                    }
-                    
-                    st.session_state.complaints.append(complaint)
-                    st.success(f"Complaint submitted successfully! Your complaint ID is: {complaint_id}")
-                    st.rerun()
+        if submit_complaint:
+            if not all([full_name, phone, category, location, issue_description]):
+                st.error("Please fill in all required fields.")
+            else:
+                complaint_id = f"SL{date.today().year}{str(len(st.session_state.complaints) + 1).zfill(4)}"
+                
+                complaint = {
+                    'id': complaint_id,
+                    'name': full_name,
+                    'phone': phone,
+                    'category': category,
+                    'location': location,
+                    'description': issue_description,
+                    'status': 'Submitted',
+                    'date': date.today().strftime('%B %d, %Y'),
+                    'user_email': st.session_state.user['email']
+                }
+                
+                st.session_state.complaints.append(complaint)
+                st.success(f"Complaint submitted successfully! Your complaint ID is: {complaint_id}")
+                st.rerun()
 
 def show_complaints():
     st.header("Your Complaints")
@@ -397,9 +401,9 @@ def show_complaints():
         st.info("Please login to view your complaints.")
         col1, col2 = st.columns(2)
         with col1:
-            login_form()
+            login_form("complaints_login")
         with col2:
-            register_form()
+            register_form("complaints_register")
         return
     
     user_complaints = [c for c in st.session_state.complaints if c['user_email'] == st.session_state.user['email']]
@@ -492,25 +496,21 @@ def show_legal_assistant():
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     
     with col1:
-        if st.button("Consumer Rights"):
-            user_input = "What are my consumer rights?"
+        if st.button("Consumer Rights", key="consumer_btn"):
+            process_chat_message("What are my consumer rights?")
     
     with col2:
-        if st.button("Property Dispute"):
-            user_input = "How to file a property dispute?"
+        if st.button("Property Dispute", key="property_btn"):
+            process_chat_message("How to file a property dispute?")
     
     with col3:
-        if st.button("Employment Law"):
-            user_input = "Employment law basics"
+        if st.button("Employment Law", key="employment_btn"):
+            process_chat_message("Employment law basics")
     
     with col4:
-        if st.button("Send Message"):
+        if st.button("Send Message", key="send_btn"):
             if user_input:
                 process_chat_message(user_input)
-    
-    if user_input and st.session_state.get('last_input') != user_input:
-        st.session_state.last_input = user_input
-        process_chat_message(user_input)
 
 def process_chat_message(message):
     st.session_state.chat_messages.append({"role": "user", "content": message})
@@ -624,10 +624,10 @@ def main():
             tab1, tab2 = st.tabs(["Login", "Register"])
             
             with tab1:
-                login_form()
+                login_form("sidebar_login")
             
             with tab2:
-                register_form()
+                register_form("sidebar_register")
     
     # Main navigation
     tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
